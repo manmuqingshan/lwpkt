@@ -607,6 +607,7 @@ lwpkt_write(lwpkt_t* pkt,
         }
 #endif /* LWPKT_CFG_USE_FLAGS */
 
+#if LWPKT_CFG_USE_CMD
         if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_USE_CMD, LWPKT_FLAG_USE_CMD)) {
             if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_CMD_EXTENDED, LWPKT_FLAG_CMD_EXTENDED)) {
                 CALC_BYTES_NUM_FOR_LEN(min_mem, cmd);
@@ -614,6 +615,7 @@ lwpkt_write(lwpkt_t* pkt,
                 ++min_mem; /* Static configuration */
             }
         }
+#endif /* LWPKT_CFG_USE_FLAGS */
 
         /* Encode data length number + add actual data space requirement */
         CALC_BYTES_NUM_FOR_LEN(min_mem, len);
