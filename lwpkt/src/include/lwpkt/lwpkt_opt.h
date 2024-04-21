@@ -106,7 +106,7 @@ extern "C" {
  * \brief           Enables `1` or disables `0` extended address length.
  * \note            \ref LWPKT_CFG_USE_ADDR must be enabled for this feature to work
  *
- * When enabled, multi-byte addresses are supported with MSB codification.
+ * When enabled, multi-byte variable length encoding is used for data storage.
  * Maximum address is limited to `32-bits`.
  *
  * When disabled, simple `8-bit` address is fixed with single byte.
