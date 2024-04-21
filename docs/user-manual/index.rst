@@ -56,16 +56,20 @@ Variable data length
 ********************
 
 Some fields implement variable data length feature, to optimize data transfer length.
-Currently supported fields are:
+Fields with variable length implementation are:
 
-* ``LEN`` field is always enabled
+* ``LEN`` field, which is always present in the packet
 * ``FROM`` and ``TO`` fields when :c:macro:`LWPKT_CFG_ADDR_EXTENDED` feature is enabled
 * ``FLAGS`` field when :c:macro:`LWPKT_CFG_USE_FLAGS` feature is enabled
 
-Variable data length is a feature that uses minimum number of bytes to transfer data.
+Variable data length is a feature that uses minimum number of bytes to transfer the data.
 It uses ``7 LSB bits`` per byte for actual data, and ``MSB`` bit to indicate if there are more bytes coming after.
+
 For example, values between ``0x00 - 0x7F`` are codified within single byte, while values between ``0x80 - 0xFF`` require ``2`` bytes for transfer.
-To transfer ``32-bit`` variable, minimum ``1-byte`` and maximum ``5-bytes`` are used.
+
+
+.. note ::
+    To transfer ``32-bit`` variable, minimum ``1-byte`` and maximum ``5-bytes`` are used.
 
 .. tip ::
     Data codification is always LSB Byte first.
