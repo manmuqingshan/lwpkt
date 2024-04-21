@@ -10,9 +10,9 @@ It is perfectly suitable for communication in embedded systems, suchs as `RS-485
 devices could be easily connected to one big network.
 
 LwPKT library uses well known and easy implementation of `LwRB <https://github.com/MaJerle/lwpkt>`_ library
-for data read and data write. It expects `2` different buffer instances.
+for data read and data write. It expects `2` different buffer instances, one for TX events, second for RX events.
 
-Parser is simple state machine that reads and processes every received character from read buffer.
+Parser is a simple state machine that reads and processes every received character from read buffer.
 When application wants to transmit data, LwPKT library generates raw data and writes them to TX buffer.
 
 Combination of both gives embedded applications freedom to implement communication protocols for TX and RX.
@@ -64,7 +64,7 @@ Currently supported fields are:
 
 Variable data length is a feature that uses minimum number of bytes to transfer data.
 It uses ``7 LSB bits`` per byte for actual data, and ``MSB`` bit to indicate if there are more bytes coming after.
-For example, values between ``0x00 - 0x7F`` are codified within single byte, while values between ``0x80 - 0x3F`` require ``2`` bytes for transfer.
+For example, values between ``0x00 - 0x7F`` are codified within single byte, while values between ``0x80 - 0xFF`` require ``2`` bytes for transfer.
 To transfer ``32-bit`` variable, minimum ``1-byte`` and maximum ``5-bytes`` are used.
 
 .. tip ::
