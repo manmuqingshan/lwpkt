@@ -365,6 +365,12 @@ lwpkt_set_addr(lwpkt_t* pkt, lwpkt_addr_t addr) {
 /**
  * \brief           Read raw data from RX ring buffer, parse the characters
  *                  and try to construct the receive packet
+ * 
+ * \note            This is the raw implementation, and does not take into account potential
+ *                  data desynchronization or data loss at the transmission layer.
+ * 
+ *                  Use \ref lwpkt_process function instead
+ * 
  * \param[in]       pkt: Packet instance
  * \return          \ref lwpktVALID when packet valid, member of \ref lwpktr_t otherwise
  */
@@ -522,7 +528,13 @@ retpre:
 }
 
 /**
- * \brief           Process packet instance and read new data
+ * \brief           Process packet RX data and check for timeouts,
+ *                  which may occur of there is no receive data for up to maximum time.
+ * 
+ * \note            This function shall be called periodically,
+ *                  at least once per every \ref LWPKT_CFG_PROCESS_INPROG_TIMEOUT milliseconds,
+ *                  to properly handle delays and timeouts in the application
+ * 
  * \param[in]       pkt: Packet instance
  * \param[in]       time: Current time in units of milliseconds
  * \return          \ref lwpktOK if processing OK, member of \ref lwpktr_t otherwise
