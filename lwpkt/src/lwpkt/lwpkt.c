@@ -60,12 +60,14 @@
     } while (0)
 
 /* Start and STOP bytes definition */
-#define LWPKT_START_BYTE 0xAA
-#define LWPKT_STOP_BYTE  0x55
+#define LWPKT_START_BYTE     0xAAU
+#define LWPKT_STOP_BYTE      0x55U
+#define LWPKT_MSB_BIT        0x80U
+#define LWPKT_7LSB_BITS_MASK 0x7FU
 
 /* Polynomial */
-#define CRC_POLY_32      0xEDB88320UL /* Reversed 0x04C11DB7 */
-#define CRC_POLY_8       0x8CUL
+#define CRC_POLY_32          0xEDB88320UL /* Reversed 0x04C11DB7 */
+#define CRC_POLY_8           0x8CUL
 
 #if LWPKT_CFG_USE_CRC
 #define WRITE_WITH_CRC(pkt, crc, tx_rb, b, len)                                                                        \
@@ -139,8 +141,8 @@
  */
 static uint32_t
 prv_crc_calc_one(uint32_t crc_curr, uint32_t new_entry, uint32_t poly) {
-    for (uint8_t j = 0; j < 8; ++j) {
-        uint8_t mix = (uint8_t)(crc_curr ^ new_entry) & 0x01UL;
+    for (uint8_t j = 0; j < 8U; ++j) {
+        uint8_t mix = (uint8_t)(crc_curr ^ new_entry) & 0x01U;
         crc_curr >>= 1U;
         if (mix > 0) {
             crc_curr ^= poly;
@@ -185,7 +187,7 @@ prv_crc_in(lwpkt_t* pkt, lwpkt_crc_t* crcobj, const void* inp, const size_t len)
 static uint32_t
 prv_crc_finish(lwpkt_t* pkt, lwpkt_crc_t* crcobj) {
     if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_CRC32, LWPKT_FLAG_CRC32)) {
-        crcobj->crc ^= 0xFFFFFFFF;
+        crcobj->crc ^= 0xFFFFFFFFUL;
     }
     return crcobj->crc;
 }
@@ -220,7 +222,7 @@ static uint8_t
 write_bytes_var_encoded(lwpkt_t* pkt, lwpkt_crc_t* crc, uint32_t var_num) {
     uint8_t cnt = 0;
     do {
-        uint8_t byt = (var_num & 0x7FU) | (var_num > 0x7FU ? 0x80U : 0);
+        uint8_t byt = (var_num & LWPKT_7LSB_BITS_MASK) | (var_num > LWPKT_7LSB_BITS_MASK ? LWPKT_MSB_BIT : 0);
         WRITE_WITH_CRC(pkt, crc, pkt->tx_rb, &byt, 1);
         var_num >>= (uint8_t)7U;
         ++cnt;
@@ -272,6 +274,7 @@ prv_go_to_next_packet_rx_state(lwpkt_t* pkt) {
                 next_state = LWPKT_STATE_CMD;
                 break;
             }
+            /* Go to next step if command isn't enabled */
         } /* fallthrough */
         case LWPKT_STATE_CMD: {
             next_state = LWPKT_STATE_LEN;
@@ -403,12 +406,12 @@ lwpkt_read(lwpkt_t* pkt) {
                 ADD_IN_TO_CRC(pkt, &pkt->m.crc, &b, 1);
 
                 if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_ADDR_EXTENDED, LWPKT_FLAG_ADDR_EXTENDED)) {
-                    pkt->m.from |= (uint8_t)(b & 0x7FU) << ((size_t)7U * (size_t)pkt->m.index++);
+                    pkt->m.from |= (uint8_t)(b & LWPKT_7LSB_BITS_MASK) << ((size_t)7U * (size_t)pkt->m.index++);
                 } else {
                     pkt->m.from = b;
                 }
                 if (!CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_ADDR_EXTENDED, LWPKT_FLAG_ADDR_EXTENDED)
-                    || (b & 0x80U) == 0x00) {
+                    || (b & LWPKT_MSB_BIT) == 0x00) {
                     prv_go_to_next_packet_rx_state(pkt);
                 }
                 break;
@@ -417,12 +420,12 @@ lwpkt_read(lwpkt_t* pkt) {
                 ADD_IN_TO_CRC(pkt, &pkt->m.crc, &b, 1);
 
                 if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_ADDR_EXTENDED, LWPKT_FLAG_ADDR_EXTENDED)) {
-                    pkt->m.to |= (uint8_t)(b & 0x7FU) << ((size_t)7U * (size_t)pkt->m.index++);
+                    pkt->m.to |= (uint8_t)(b & LWPKT_7LSB_BITS_MASK) << ((size_t)7U * (size_t)pkt->m.index++);
                 } else {
                     pkt->m.to = b;
                 }
                 if (!CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_ADDR_EXTENDED, LWPKT_FLAG_ADDR_EXTENDED)
-                    || (b & 0x80U) == 0x00) {
+                    || (b & LWPKT_MSB_BIT) == 0x00) {
                     prv_go_to_next_packet_rx_state(pkt);
                 }
                 break;
@@ -432,8 +435,8 @@ lwpkt_read(lwpkt_t* pkt) {
             case LWPKT_STATE_FLAGS: {
                 ADD_IN_TO_CRC(pkt, &pkt->m.crc, &b, 1U);
 
-                pkt->m.flags |= (b & 0x7FU) << ((size_t)7U * (size_t)pkt->m.index++);
-                if ((b & 0x80U) == 0) {
+                pkt->m.flags |= (b & LWPKT_7LSB_BITS_MASK) << ((size_t)7U * (size_t)pkt->m.index++);
+                if ((b & LWPKT_MSB_BIT) == 0) {
                     prv_go_to_next_packet_rx_state(pkt);
                 }
                 break;
@@ -444,12 +447,12 @@ lwpkt_read(lwpkt_t* pkt) {
                 ADD_IN_TO_CRC(pkt, &pkt->m.crc, &b, 1);
 
                 if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_CMD_EXTENDED, LWPKT_FLAG_CMD_EXTENDED)) {
-                    pkt->m.cmd |= (uint8_t)(b & 0x7FU) << ((size_t)7U * (size_t)pkt->m.index++);
+                    pkt->m.cmd |= (uint8_t)(b & LWPKT_7LSB_BITS_MASK) << ((size_t)7U * (size_t)pkt->m.index++);
                 } else {
                     pkt->m.cmd = b;
                 }
                 if (!CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_CMD_EXTENDED, LWPKT_FLAG_CMD_EXTENDED)
-                    || (b & 0x80U) == 0x00) {
+                    || (b & LWPKT_MSB_BIT) == 0x00) {
                     prv_go_to_next_packet_rx_state(pkt);
                 }
                 break;
@@ -458,8 +461,8 @@ lwpkt_read(lwpkt_t* pkt) {
             case LWPKT_STATE_LEN: {
                 ADD_IN_TO_CRC(pkt, &pkt->m.crc, &b, 1U);
 
-                pkt->m.len |= (b & 0x7FU) << ((size_t)7U * (size_t)pkt->m.index++);
-                if ((b & 0x80U) == 0) {
+                pkt->m.len |= (b & LWPKT_7LSB_BITS_MASK) << ((size_t)7U * (size_t)pkt->m.index++);
+                if ((b & LWPKT_MSB_BIT) == 0) {
                     prv_go_to_next_packet_rx_state(pkt);
                 }
                 break;
