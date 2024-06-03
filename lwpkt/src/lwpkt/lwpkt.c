@@ -96,9 +96,11 @@
 
 #if LWPKT_CFG_USE_EVT
 #define SEND_EVT(p, t)                                                                                                 \
-    if ((p)->evt_fn != NULL) {                                                                                         \
-        (p)->evt_fn((p), (t));                                                                                         \
-    }
+    do {                                                                                                               \
+        if ((p)->evt_fn != NULL) {                                                                                     \
+            (p)->evt_fn((p), (t));                                                                                     \
+        }                                                                                                              \
+    } while (0)
 #else /* LWPKT_CFG_USE_EVT */
 #define SEND_EVT(p, t)
 #endif /* !LWPKT_CFG_USE_EVT */
