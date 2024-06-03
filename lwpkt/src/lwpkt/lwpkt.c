@@ -70,11 +70,11 @@
 #define CRC_POLY_8           0x8CUL
 
 #if LWPKT_CFG_USE_CRC
-#define WRITE_WITH_CRC(pkt, crc, tx_rb, b, len)                                                                        \
+#define WRITE_WITH_CRC(pkt, crc, tx_rb, data, len)                                                                     \
     do {                                                                                                               \
-        lwrb_write((tx_rb), (b), (len));                                                                               \
+        lwrb_write((tx_rb), (data), (len));                                                                            \
         if (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_USE_CRC, LWPKT_FLAG_USE_CRC)) {                           \
-            prv_crc_in((pkt), (crc), (b), (len));                                                                      \
+            prv_crc_in((pkt), (crc), (data), (len));                                                                   \
         }                                                                                                              \
     } while (0)
 #define ADD_IN_TO_CRC(pkt, crc, val, len)                                                                              \
@@ -86,9 +86,9 @@
 #define INIT_CRC(pkt, crc) prv_crc_init((pkt), (crc))
 #define CRC_DATA_LEN(pkt)  (CHECK_FEATURE_CONFIG_MODE_ENABLED(pkt, LWPKT_CFG_CRC32, LWPKT_FLAG_CRC32) ? 4 : 1)
 #else /* LWPKT_CFG_USE_CRC */
-#define WRITE_WITH_CRC(pkt, crc, tx_rb, b, len)                                                                        \
+#define WRITE_WITH_CRC(pkt, crc, tx_rb, data, len)                                                                     \
     do {                                                                                                               \
-        lwrb_write((tx_rb), (b), (len));                                                                               \
+        lwrb_write((tx_rb), (data), (len));                                                                            \
     } while (0)
 #define ADD_IN_TO_CRC(pkt, crc, val, len)
 #define INIT_CRC(pkt, crc)
