@@ -47,16 +47,16 @@
 #error "LWPKT_CFG_CRC32 must be disabled if LWPKT_CFG_USE_CRC is not enabled"
 #endif
 
-#define LWPKT_IS_VALID(p) ((p) != NULL)
-#define LWPKT_SET_STATE(p, s)                                                                                          \
+#define LWPKT_IS_VALID(pkt) ((pkt) != NULL)
+#define LWPKT_SET_STATE(pkt, _state_)                                                                                  \
     do {                                                                                                               \
-        (p)->m.state = (s);                                                                                            \
-        (p)->m.index = 0;                                                                                              \
+        (pkt)->m.state = (_state_);                                                                                    \
+        (pkt)->m.index = 0;                                                                                            \
     } while (0)
-#define LWPKT_RESET(p)                                                                                                 \
+#define LWPKT_RESET(pkt)                                                                                               \
     do {                                                                                                               \
-        LWPKT_MEMSET(&(p)->m, 0x00, sizeof((p)->m));                                                                   \
-        (p)->m.state = LWPKT_STATE_START;                                                                              \
+        LWPKT_MEMSET(&(pkt)->m, 0x00, sizeof((pkt)->m));                                                               \
+        (pkt)->m.state = LWPKT_STATE_START;                                                                            \
     } while (0)
 
 /* Start and STOP bytes definition */
@@ -95,14 +95,14 @@
 #endif /* !LWPKT_CFG_USE_CRC */
 
 #if LWPKT_CFG_USE_EVT
-#define SEND_EVT(p, t)                                                                                                 \
+#define SEND_EVT(pkt, event)                                                                                           \
     do {                                                                                                               \
-        if ((p)->evt_fn != NULL) {                                                                                     \
-            (p)->evt_fn((p), (t));                                                                                     \
+        if ((pkt)->evt_fn != NULL) {                                                                                   \
+            (pkt)->evt_fn((pkt), (event));                                                                             \
         }                                                                                                              \
     } while (0)
 #else /* LWPKT_CFG_USE_EVT */
-#define SEND_EVT(p, t)
+#define SEND_EVT(pkt, event)
 #endif /* !LWPKT_CFG_USE_EVT */
 
 /* Flags for dynamically settable features in the library */
