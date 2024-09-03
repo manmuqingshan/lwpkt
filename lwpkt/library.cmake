@@ -26,9 +26,9 @@ set(lwpkt_include_DIRS
 )
 
 # Register library to the system
-add_library(lwpkt INTERFACE)
-target_sources(lwpkt INTERFACE ${lwpkt_core_SRCS})
-target_include_directories(lwpkt INTERFACE ${lwpkt_include_DIRS})
+add_library(lwpkt)
+target_sources(lwpkt PRIVATE ${lwpkt_core_SRCS})
+target_include_directories(lwpkt PUBLIC ${lwpkt_include_DIRS})
 target_compile_options(lwpkt PRIVATE ${LWPKT_COMPILE_OPTIONS})
 target_compile_definitions(lwpkt PRIVATE ${LWPKT_COMPILE_DEFINITIONS})
 
