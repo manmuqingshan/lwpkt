@@ -6,41 +6,26 @@ project(LwLibPROJECT)
 if(NOT PROJECT_IS_TOP_LEVEL)
     add_subdirectory(lwpkt)
 else()
-    # Set as executable
     add_executable(${PROJECT_NAME})
-
-    # Add key executable block
-    target_sources(${PROJECT_NAME} PUBLIC
+    target_sources(${PROJECT_NAME} PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/dev/main.c
         ${CMAKE_CURRENT_LIST_DIR}/libs/lwrb/src/lwrb/lwrb.c
         ${CMAKE_CURRENT_LIST_DIR}/examples/example_lwpkt.c
         ${CMAKE_CURRENT_LIST_DIR}/examples/example_lwpkt_evt.c
         ${CMAKE_CURRENT_LIST_DIR}/test/lwpkt_test.c
     )
-
-    # Add key include paths
     target_include_directories(${PROJECT_NAME} PUBLIC
         ${CMAKE_CURRENT_LIST_DIR}/dev
         ${CMAKE_CURRENT_LIST_DIR}/libs/lwrb/src/include
     )
 
-    # Compilation definition information
-    target_compile_definitions(${PROJECT_NAME} PUBLIC
-        WIN32
-        _DEBUG
-        CONSOLE
-        LWPKT_DEV
-    )
-
-    # Compiler options
-    target_compile_options(${PROJECT_NAME} PRIVATE
-        -Wall
-        -Wextra
-        -Wpedantic
-    )
-
     # Add subdir with lwpkt and link to project
     set(LWPKT_OPTS_FILE ${CMAKE_CURRENT_LIST_DIR}/dev/lwpkt_opts.h)
     add_subdirectory(lwpkt)
-    target_link_libraries(${PROJECT_NAME} lwpkt)
+    target_link_libraries(${PROJECT_NAME} PUBLIC lwpkt)
+
+    # Add compile options to the library, which will propagate options to executable through public link
+    target_compile_definitions(lwpkt PUBLIC WIN32 _DEBUG CONSOLE LWPKT_DEV)
+    target_compile_options(lwpkt PUBLIC -Wall -Wextra -Wpedantic)
+    target_include_directories(lwpkt PUBLIC ${CMAKE_CURRENT_LIST_DIR}/libs/lwrb/src/include)
 endif()
