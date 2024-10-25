@@ -87,8 +87,9 @@ class LwPKT(object):
                 data_out.append(cmd & 0xFF)
 
         # Add data length, then actual data
-        data_out += self.varint_encode(len(data))
-        if len(data) > 0:
+        datalen = len(data) if data else 0
+        data_out += self.varint_encode(datalen)
+        if datalen > 0:
             data_out += data
 
         # Calc CRC of all data (except start byte)
@@ -282,9 +283,7 @@ if __name__ == '__main__':
     print('main')
     pkt = LwPKT()
 
-    for i in range(1 << 7):
-        data = bytearray("Hello World\r\n".encode('utf-8'))
-
+    for i in range(1 << 8):
         # Variables
         addr_to = 0x87654321
         addr_our = 0x12345678
@@ -299,6 +298,8 @@ if __name__ == '__main__':
         pkt.opt_cmd_ext = i & 0x10
         pkt.opt_crc = i & 0x20
         pkt.opt_crc32 = i & 0x40
+        data = bytearray("Hello World\r\n".encode('utf-8')) if (i & 0x80) else None
+        data_len = len(data) if data else 0
 
         # Trim unused options
         if not pkt.opt_addr_ext:
@@ -337,7 +338,9 @@ if __name__ == '__main__':
                     print('flags mismatch!')
                 elif pkt.opt_cmd and decoded_packet.cmd != cmd:
                     print('flags mismatch!')
-                elif decoded_packet.len != len(data):
+                elif data == None and decoded_packet.len > 0:
+                    print('data should be 0')
+                elif decoded_packet.len != data_len:
                     print('data len mismatch!')
                 else:
                     test_ok = True
