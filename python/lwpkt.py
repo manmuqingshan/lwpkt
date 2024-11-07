@@ -222,7 +222,8 @@ class LwPKT(object):
                         if self.rx.crc == self.rx.crc_recv:
                             self.rx_go_to_next_state()
                         else:
-                            self.rx_go_to_next_state()
+                            print('CRC error')
+                            self.rx.go_to_state(LwPKT.LwPKT_Packet.State.START)
 
                 case LwPKT.LwPKT_Packet.State.STOP:
                     self.rx_packets.put_nowait(self.rx)
