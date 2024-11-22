@@ -6,7 +6,7 @@ and shall not be used by the final application
 '''
 
 class LwPKT(object):
-    class LwPKT_Packet(object):
+    class Packet(object):
 
         class State(enum.Enum):
             START  = 0
@@ -21,7 +21,7 @@ class LwPKT(object):
             END    = 9
 
         def __init__(self):
-            self.state = LwPKT.LwPKT_Packet.State.START
+            self.state = LwPKT.Packet.State.START
             self.len = 0
             self.data = bytearray()
             self.pkt_from = 0
@@ -54,7 +54,7 @@ class LwPKT(object):
 
         # Contains receive object
         # Each new packet is restarted (and reconstructed)
-        self.rx = LwPKT.LwPKT_Packet()
+        self.rx = LwPKT.Packet()
 
         # Contains queue of valid receive packets
         self.rx_packets = queue.Queue()
@@ -151,13 +151,13 @@ class LwPKT(object):
             ch = self.rx_data.get_nowait()
 
             match self.rx.state:
-                case LwPKT.LwPKT_Packet.State.START:
+                case LwPKT.Packet.State.START:
                     if ch == 0xAA:
-                        self.rx = LwPKT.LwPKT_Packet()
+                        self.rx = LwPKT.Packet()
                         self.rx.crc = 0xFFFFFFFF if self.opt_crc32 else 0
                         self.rx_go_to_next_state()
 
-                case LwPKT.LwPKT_Packet.State.FROM:
+                case LwPKT.Packet.State.FROM:
                     self.rx.crc = self.crc_in(self.rx.crc, ch)
                     if self.opt_addr_ext:
                         self.rx.pkt_from |= (ch & 0x7F) << (7 * self.rx.index)
@@ -168,7 +168,7 @@ class LwPKT(object):
                     if not self.opt_addr_ext or (ch & 0x80) == 0:
                         self.rx_go_to_next_state()
 
-                case LwPKT.LwPKT_Packet.State.TO:
+                case LwPKT.Packet.State.TO:
                     self.rx.crc = self.crc_in(self.rx.crc, ch)
                     if self.opt_addr_ext:
                         self.rx.pkt_to |= (ch & 0x7F) << (7 * self.rx.index)
@@ -179,14 +179,14 @@ class LwPKT(object):
                     if not self.opt_addr_ext or (ch & 0x80) == 0:
                         self.rx_go_to_next_state()
 
-                case LwPKT.LwPKT_Packet.State.FLAGS:
+                case LwPKT.Packet.State.FLAGS:
                     self.rx.crc = self.crc_in(self.rx.crc, ch)
                     self.rx.flags |= (ch & 0x7F) << (7 * self.rx.index)
                     self.rx.index += 1
                     if (ch & 0x80) == 0:
                         self.rx_go_to_next_state()
 
-                case LwPKT.LwPKT_Packet.State.CMD:
+                case LwPKT.Packet.State.CMD:
                     self.rx.crc = self.crc_in(self.rx.crc, ch)
                     if self.opt_cmd_ext:
                         self.rx.cmd |= (ch & 0x7F) << (7 * self.rx.index)
@@ -197,20 +197,20 @@ class LwPKT(object):
                     if not self.opt_cmd_ext or (ch & 0x80) == 0:
                         self.rx_go_to_next_state()
 
-                case LwPKT.LwPKT_Packet.State.LEN:
+                case LwPKT.Packet.State.LEN:
                     self.rx.crc = self.crc_in(self.rx.crc, ch)
                     self.rx.len |= (ch & 0x7F) << (7 * self.rx.index)
                     self.rx.index += 1
                     if (ch & 0x80) == 0:
                         self.rx_go_to_next_state()
 
-                case LwPKT.LwPKT_Packet.State.DATA:
+                case LwPKT.Packet.State.DATA:
                     self.rx.crc = self.crc_in(self.rx.crc, ch)
                     self.rx.data.append(ch)
                     if len(self.rx.data) == self.rx.len:
                         self.rx_go_to_next_state()
 
-                case LwPKT.LwPKT_Packet.State.CRC:
+                case LwPKT.Packet.State.CRC:
                     crc_len = 4 if self.opt_crc32 else 1
                     if self.rx.index < crc_len:
                         self.rx.crc_recv |= ch << (8 * self.rx.index)
@@ -223,9 +223,9 @@ class LwPKT(object):
                             self.rx_go_to_next_state()
                         else:
                             print('CRC error')
-                            self.rx.go_to_state(LwPKT.LwPKT_Packet.State.START)
+                            self.rx.go_to_state(LwPKT.Packet.State.START)
 
-                case LwPKT.LwPKT_Packet.State.STOP:
+                case LwPKT.Packet.State.STOP:
                     self.rx_packets.put_nowait(self.rx)
                     self.rx_go_to_next_state()
                     
@@ -234,50 +234,50 @@ class LwPKT(object):
 
                 # Handle default situation
                 case _:
-                    self.rx.go_to_state(LwPKT.LwPKT_Packet.State.START)
+                    self.rx.go_to_state(LwPKT.Packet.State.START)
         return ret
     
     # Get the packet
-    def rx_get_packet(self) -> LwPKT_Packet|bool:
+    def rx_get_packet(self) -> Packet|bool:
         if not self.rx_packets.empty():
             return self.rx_packets.get_nowait()
         return False
 
     # Put RX to next state, according to the configuration options
     def rx_go_to_next_state(self):     
-        new_state = LwPKT.LwPKT_Packet.State.END
+        new_state = LwPKT.Packet.State.END
         match self.rx.state:
-            case LwPKT.LwPKT_Packet.State.START:
-                if self.opt_addr: new_state = LwPKT.LwPKT_Packet.State.FROM
-                elif self.opt_flags: new_state = LwPKT.LwPKT_Packet.State.FLAGS
-                elif self.opt_cmd: new_state = LwPKT.LwPKT_Packet.State.CMD
-                else: new_state = LwPKT.LwPKT_Packet.State.LEN
-            case LwPKT.LwPKT_Packet.State.TO:
-                if self.opt_flags: new_state = LwPKT.LwPKT_Packet.State.FLAGS
-                elif self.opt_cmd: new_state = LwPKT.LwPKT_Packet.State.CMD
-                else: new_state = LwPKT.LwPKT_Packet.State.LEN
-            case LwPKT.LwPKT_Packet.State.FLAGS:
-                if self.opt_cmd: new_state = LwPKT.LwPKT_Packet.State.CMD
-                else: new_state = LwPKT.LwPKT_Packet.State.LEN
-            case LwPKT.LwPKT_Packet.State.CMD:
-                new_state = LwPKT.LwPKT_Packet.State.LEN
-            case LwPKT.LwPKT_Packet.State.LEN:
-                if self.rx.len > 0: new_state = LwPKT.LwPKT_Packet.State.DATA
-                elif self.opt_crc: new_state = LwPKT.LwPKT_Packet.State.CRC
-                else: new_state = LwPKT.LwPKT_Packet.State.STOP
-            case LwPKT.LwPKT_Packet.State.DATA:
-                if self.opt_crc: new_state = LwPKT.LwPKT_Packet.State.CRC
-                else: new_state = LwPKT.LwPKT_Packet.State.STOP
-            case LwPKT.LwPKT_Packet.State.CRC:
-                new_state = LwPKT.LwPKT_Packet.State.STOP
-            case LwPKT.LwPKT_Packet.State.FROM:
+            case LwPKT.Packet.State.START:
+                if self.opt_addr: new_state = LwPKT.Packet.State.FROM
+                elif self.opt_flags: new_state = LwPKT.Packet.State.FLAGS
+                elif self.opt_cmd: new_state = LwPKT.Packet.State.CMD
+                else: new_state = LwPKT.Packet.State.LEN
+            case LwPKT.Packet.State.TO:
+                if self.opt_flags: new_state = LwPKT.Packet.State.FLAGS
+                elif self.opt_cmd: new_state = LwPKT.Packet.State.CMD
+                else: new_state = LwPKT.Packet.State.LEN
+            case LwPKT.Packet.State.FLAGS:
+                if self.opt_cmd: new_state = LwPKT.Packet.State.CMD
+                else: new_state = LwPKT.Packet.State.LEN
+            case LwPKT.Packet.State.CMD:
+                new_state = LwPKT.Packet.State.LEN
+            case LwPKT.Packet.State.LEN:
+                if self.rx.len > 0: new_state = LwPKT.Packet.State.DATA
+                elif self.opt_crc: new_state = LwPKT.Packet.State.CRC
+                else: new_state = LwPKT.Packet.State.STOP
+            case LwPKT.Packet.State.DATA:
+                if self.opt_crc: new_state = LwPKT.Packet.State.CRC
+                else: new_state = LwPKT.Packet.State.STOP
+            case LwPKT.Packet.State.CRC:
+                new_state = LwPKT.Packet.State.STOP
+            case LwPKT.Packet.State.FROM:
                 # There is no other way to go than into TO state
-                new_state = LwPKT.LwPKT_Packet.State.TO
-            case LwPKT.LwPKT_Packet.State.STOP:
-                new_state = LwPKT.LwPKT_Packet.State.START
+                new_state = LwPKT.Packet.State.TO
+            case LwPKT.Packet.State.STOP:
+                new_state = LwPKT.Packet.State.START
             case _:
-                new_state = LwPKT.LwPKT_Packet.State.START
-        if new_state != LwPKT.LwPKT_Packet.State.END:
+                new_state = LwPKT.Packet.State.START
+        if new_state != LwPKT.Packet.State.END:
             self.rx.go_to_state(new_state)
 
 if __name__ == '__main__':

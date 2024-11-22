@@ -96,9 +96,9 @@ typedef enum {
     LWPKT_EVT_PKT,        /*!< Valid packet ready to read */
     LWPKT_EVT_TIMEOUT,    /*!< Timeout on packat, reset event */
     LWPKT_EVT_READ,       /*!< Packet read operation.
-                            Called when read operation happens from RX buffer */
+                                Called when read operation happens from RX buffer */
     LWPKT_EVT_WRITE,      /*!< Packet write operation.
-                            Called when write operation happens to TX buffer  */
+                                Called when write operation happens to TX buffer  */
     LWPKT_EVT_PRE_WRITE,  /*!< Packet pre-write operation.
                                 Called before write operation could even start.
                                 It can be used to get exclusive mutex access to the resource */
