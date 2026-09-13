@@ -1,5 +1,7 @@
 # Packet protocol manager
 
+LwPKT is a generic packet protocol library optimized for embedded systems.
+
 [Open documentation](https://docs.majerle.eu/projects/lwpkt/)
 
 ## Features
